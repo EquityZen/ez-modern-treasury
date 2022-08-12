@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(
-    name = 'modern_treasury',
+    name = 'ez_modern_treasury_python',
     packages = ['modern_treasury',
                 'modern_treasury.objects',
                 'modern_treasury.objects.request',
@@ -8,11 +8,11 @@ setup(
                 'modern_treasury.objects.response'],
     version = '0.0.38',
     license='MIT',
-    description = 'Modern Treasury Client Library',
+    description = 'EZs Modern Treasury Client Library',
     author = 'Issam Zeibak',
     author_email = 'issam.zeibak@equityzen.com',
-    url = 'https://github.com/equityzen/modern-treasury',
-    download_url = 'https://github.com/EquityZen/modern_treasury/archive/refs/tags/v_0.0.38.tar.gz',
+    url = 'https://github.com/equityzen/ez-modern-treasury',
+    download_url = 'https://github.com/EquityZen/ez-modern_treasury/archive/refs/tags/v_0.0.38.tar.gz',
     keywords = ['Modern Treasury', 'Finance'],
     install_requires=['pytest', 'requests'],
     classifiers=[
