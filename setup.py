@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(
-    name = 'ez-modern_treasury',
+    name = 'ez_modern_treasury',
     packages = ['modern_treasury',
                 'modern_treasury.objects',
                 'modern_treasury.objects.request',
