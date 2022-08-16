@@ -8,7 +8,7 @@ class AccountDetailsResponse:
 
     @property
     def account_number(self):
-        return self.json.get('account_number')
+        return "xxxxx" + self.json.get('account_number')[:4]
 
     @property
     def account_number_type(self):

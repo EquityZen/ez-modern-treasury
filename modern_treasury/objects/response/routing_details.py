@@ -15,7 +15,7 @@ class RoutingDetailsResponse:
 
     @property
     def routing_number(self):
-        return self.json.get('routing_number')
+        return "xxxxx" + self.json.get('routing_number')[:4]
 
     @property
     def routing_number_type(self):
