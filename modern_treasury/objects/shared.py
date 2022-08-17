@@ -32,3 +32,7 @@ class RoutingNumberTypes:
     BSB = 'au_bsb'
     GB = 'gb_sort_code'
     IFSC = 'in_ifsc'
+
+
+def mask_number(s):
+    return s[-4:].rjust(len(s), "*")

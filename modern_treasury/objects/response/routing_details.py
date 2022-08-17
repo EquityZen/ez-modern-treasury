@@ -1,3 +1,4 @@
+from ..shared import mask_number
 from .address import AddressResponse
 
 
@@ -15,7 +16,7 @@ class RoutingDetailsResponse:
 
     @property
     def routing_number(self):
-        return "xxxxx" + self.json.get('routing_number')[:4]
+        return self.json.get('routing_number')
 
     @property
     def routing_number_type(self):
@@ -27,3 +28,9 @@ class RoutingDetailsResponse:
         if result:
             return AddressResponse(result)
         return None
+
+    def __str__(self) -> str:
+        return (
+            f"id: { self.id }, bank_name: { self.bank_name }, routing_number: { mask_number(self.routing_number) },"
+            f" routing_number_type: { self.routing_number_type }, bank_address: { str(self.bank_address) }"
+        )
