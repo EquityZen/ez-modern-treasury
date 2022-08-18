@@ -1,3 +1,4 @@
+from ..shared import mask_number
 from .address import AddressResponse
 
 
@@ -27,3 +28,9 @@ class RoutingDetailsResponse:
         if result:
             return AddressResponse(result)
         return None
+
+    def __str__(self) -> str:
+        return (
+            f"id: { self.id }, bank_name: { self.bank_name }, routing_number: { mask_number(self.routing_number) },"
+            f" routing_number_type: { self.routing_number_type }, bank_address: { str(self.bank_address) }"
+        )

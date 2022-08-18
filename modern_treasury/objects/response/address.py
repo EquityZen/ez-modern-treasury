@@ -29,3 +29,9 @@ class AddressResponse:
     @property
     def country(self):
         return self.json.get('country')
+
+    def __str__(self) -> str:
+        return (
+            f"id: { self.id }, line1: { self.line1 }, line2: { self.line2 }, locality: { self.locality },"
+            f"region: { self.region }, postal_code: { self.postal_code }, country: { self.country }"
+        )
