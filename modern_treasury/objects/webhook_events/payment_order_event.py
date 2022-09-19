@@ -34,7 +34,7 @@ class PaymentOrderData(Data):
 
     @property
     def reference_numbers(self) -> ReferenceNumber:
-        return [ReferenceNumber.create(ref_number)  for ref_number in self.json_data.get("reference_numbers")]
+        return [ReferenceNumber.create(ref_number)  for ref_number in self.json_data.get("reference_numbers", [])]
 
 
 class PaymentOrderEvent(Event):
