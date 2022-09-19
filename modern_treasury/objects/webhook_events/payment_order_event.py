@@ -1,3 +1,4 @@
+from modern_treasury.objects.webhook_events.reference_number import ReferenceNumber
 from .base import Event, Data
 
 
@@ -12,6 +13,10 @@ class PaymentOrderEventStates:
 
 class PaymentOrderData(Data):
     @property
+    def id(self):
+        return self.json_data.get("id")
+
+    @property
     def is_completed(self):
         return self.status == PaymentOrderEventStates.COMPLETED
 
@@ -22,6 +27,14 @@ class PaymentOrderData(Data):
     @property
     def is_denied(self):
         return self.status == PaymentOrderEventStates.CANCELLED
+
+    @property
+    def id(self):
+        return self.json_data.get("id")
+
+    @property
+    def reference_numbers(self) -> ReferenceNumber:
+        return [ReferenceNumber.create(ref_number)  for ref_number in self.json_data.get("reference_numbers", [])]
 
 
 class PaymentOrderEvent(Event):

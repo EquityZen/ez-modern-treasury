@@ -12,6 +12,10 @@ class IncomingPaymentDetailEventData(Data):
         return self.json_data.get("id")
 
     @property
+    def bank_transaction_id(self):
+        return self.json_data.get("data", {}).get("id")
+
+    @property
     def payment_type(self):
         return self.json_data.get("type")
 
