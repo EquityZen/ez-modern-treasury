@@ -1,3 +1,4 @@
+from modern_treasury.objects.reference_number import ReferenceNumber
 from .routing_details import RoutingDetailsResponse
 
 
@@ -143,3 +144,7 @@ class PaymentOrderResponse:
     @property
     def ultimate_originating_party_identifier(self):
         return self.json.get('ultimate_originating_party_identifier')
+
+    @property
+    def reference_numbers(self) -> ReferenceNumber:
+        return [ReferenceNumber.create(ref_number)  for ref_number in self.json.get("reference_numbers", [])]
