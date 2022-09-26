@@ -1,4 +1,4 @@
-from modern_treasury.objects.webhook_events.reference_number import ReferenceNumber
+from modern_treasury.objects.reference_number import ReferenceNumber
 from .base import Event, Data
 
 
