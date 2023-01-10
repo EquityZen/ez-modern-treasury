@@ -44,7 +44,7 @@ class ModernTreasury:
         self.http_basic_auth = HTTPBasicAuth(username=self.organization_id, password=self.api_key)
         self.headers = {"Content-Type": "application/json"}
 
-    def _post(self, url:str, payload: dict, idempotency_key: str = None) -> dict:
+    def _post(self, url:str, payload: dict, idempotency_key: str = None) -> requests.Response:
         headers = {**self.headers, "Idempotency-Key": idempotency_key} if idempotency_key else self.headers
         response = requests.post(url=url,
                                  auth=self.http_basic_auth,
@@ -52,18 +52,18 @@ class ModernTreasury:
                                  json=payload)
         if not response.ok:
             raise ModernTreasuryException(response.status_code, response.reason, url, response.json())
-        return response.json()
+        return response
 
-    def _get(self, url:str, params = None) -> dict:
+    def _get(self, url:str, params = None) -> requests.Response:
         response = requests.get(url=url,
                                 auth=self.http_basic_auth,
                                 headers=self.headers,
                                 params=params)
         if not response.ok:
             raise ModernTreasuryException(response.status_code, response.reason, url, response.json())
-        return (response.headers, response.json())
+        return response
 
-    def _patch(self, url:str, payload: dict) -> dict:
+    def _patch(self, url:str, payload: dict) -> requests.Response:
         response = requests.request("PATCH",
                                     url=url,
                                     json=payload,
@@ -71,9 +71,9 @@ class ModernTreasury:
                                     auth=self.http_basic_auth)
         if not response.ok:
             raise ModernTreasuryException(response.status_code, response.reason, url, response)
-        return response.json()
+        return response
 
-    def _delete(self, url:str) -> dict:
+    def _delete(self, url:str) -> None:
         response = requests.request("DELETE",
                                     url=url,
                                     headers=self.headers,
@@ -83,7 +83,7 @@ class ModernTreasury:
 
     # Counter Parties
     def get_counter_parties(self):
-        return self._get(url=COUNTER_PARTIES_URL)[1]
+        return self._get(url=COUNTER_PARTIES_URL).json()
 
     def get_counterparty_account_by_name(self, name) -> Optional[CounterPartyResponse]:
         for account in self.get_counter_parties():
@@ -105,9 +105,9 @@ class ModernTreasury:
                 querystring[f'metadata[{str(key)}]'] = str(value)
 
         try:
-            headers, response = self._get(url=COUNTER_PARTIES_URL, params=querystring)
-            next_cursor = headers.get('X-After-Cursor')
-            return (next_cursor, [CounterPartyResponse(counterparty) for counterparty in response])
+            response = self._get(url=COUNTER_PARTIES_URL, params=querystring)
+            next_cursor = response.headers.get('X-After-Cursor')
+            return (next_cursor, [CounterPartyResponse(counterparty) for counterparty in response.json()])
         except:
             return (None, [])
 
@@ -115,10 +115,10 @@ class ModernTreasury:
         return self._delete(url=f'{COUNTER_PARTIES_URL}/{id}')
 
     def get_counterparty_account_by_id(self, id:str) -> CounterPartyResponse:
-        return CounterPartyResponse(self._get(url=f'{COUNTER_PARTIES_URL}/{id}'))[1]
+        return CounterPartyResponse(self._get(url=f'{COUNTER_PARTIES_URL}/{id}').json())
 
     def create_counterparty_account(self, counterparty_request: CounterPartyRequest) -> CounterPartyResponse:
-        return CounterPartyResponse(self._post(url=COUNTER_PARTIES_URL, payload=counterparty_request.to_json(), idempotency_key=counterparty_request.idempotency_key))
+        return CounterPartyResponse(self._post(url=COUNTER_PARTIES_URL, payload=counterparty_request.to_json(), idempotency_key=counterparty_request.idempotency_key).json())
 
     # external account
     def update_external_account(self, external_account_request: ExternalAccountRequest,
@@ -127,7 +127,7 @@ class ModernTreasury:
         result = self._patch(url=f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}',
                              payload=payload)
         if result:
-            return ExternalAccountResponse(result)
+            return ExternalAccountResponse(result.json())
         return None
 
     # account details
@@ -140,16 +140,16 @@ class ModernTreasury:
                                external_account_id: str) -> AccountDetailsResponse:
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}/account_details'
         payload = account_details.to_json()
-        return AccountDetailsResponse(self._post(url=url, payload=payload, idempotency_key=account_details.idempotency_key))
+        return AccountDetailsResponse(self._post(url=url, payload=payload, idempotency_key=account_details.idempotency_key).json())
 
     # routing details
     def get_routing_details_by_id(self, external_account_id, routing_details_id):
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}/routing_details/{routing_details_id}'
-        return self._get(url=url)[1]
+        return self._get(url=url).json()
 
     def list_routing_details(self, external_account_id):
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}/routing_details/'
-        return self._get(url=url)[1]
+        return self._get(url=url).json()
 
     def delete_routing_details(self, external_account_id:str, routing_details_id:str):
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}/routing_details/{routing_details_id}'
@@ -160,7 +160,7 @@ class ModernTreasury:
                                external_account_id: str) -> RoutingDetailsResponse:
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}/routing_details'
         payload = routing_details.to_json()
-        return RoutingDetailsResponse(self._post(url=url, payload=payload, idempotency_key=routing_details.idempotency_key))
+        return RoutingDetailsResponse(self._post(url=url, payload=payload, idempotency_key=routing_details.idempotency_key).json())
 
     # Internal Accounts
     def get_internal_accounts(self, per_page=None, after_cursor=None) -> Tuple[Optional[str], List[InternalAccountResponse]]:
@@ -169,17 +169,17 @@ class ModernTreasury:
             params.update({"per_page": per_page})
         if after_cursor:
             params.update({"after_cursor": after_cursor})
-        headers, result = self._get(url=INTERNAL_ACCOUNT_URL, params=params if params else None)
+        result = self._get(url=INTERNAL_ACCOUNT_URL, params=params if params else None)
 
         internal_accounts = []
-        for account in result:
+        for account in result.json():
             internal_accounts.append(InternalAccountResponse(account))
-        next_cursor = headers.get('X-After-Cursor')
+        next_cursor = result.headers.get('X-After-Cursor')
         return (next_cursor, internal_accounts)
 
     def get_internal_account_by_id(self, id:str) -> Optional[InternalAccountResponse]:
         if id:
-            _, result = self._get(url=f'{INTERNAL_ACCOUNT_URL}/{id}')
+            result = self._get(url=f'{INTERNAL_ACCOUNT_URL}/{id}').json()
             return InternalAccountResponse(result)
         else:
             raise Exception("id cannot be an empty string")
@@ -187,7 +187,7 @@ class ModernTreasury:
     # External Accounts
     def create_external_account(self, external_account_request: ExternalAccountRequest):
         response = self._post(url=EXTERNAL_ACCOUNT_URL, payload=external_account_request.to_json(), idempotency_key=external_account_request.idempotency_key)
-        return ExternalAccountResponse(response)
+        return ExternalAccountResponse(response.json())
 
     def delete_external_account(self, external_account_id:str):
         url = f'{EXTERNAL_ACCOUNT_URL}/{external_account_id}'
@@ -197,7 +197,7 @@ class ModernTreasury:
     # Expected Payments
     def create_expected_payment(self, expected_payment_request: ExpectedPaymentRequest) -> ExpectedPaymentResponse:
         response = self._post(url=EXPECTED_PAYMENTS_URL, payload=expected_payment_request.to_json(), idempotency_key=expected_payment_request.idempotency_key)
-        return ExpectedPaymentResponse(response)
+        return ExpectedPaymentResponse(response.json())
 
     def get_expected_payment_by_id(self, id:str) -> Optional[ExpectedPaymentResponse]:
         result = requests.get(url=f'{EXPECTED_PAYMENTS_URL}/{id}', auth=self.http_basic_auth)
@@ -205,15 +205,15 @@ class ModernTreasury:
 
     def update_expected_payment(self, id:str, expected_payment_request: ExpectedPaymentRequest) -> ExpectedPaymentResponse:
         response = self._patch(url=f'{EXPECTED_PAYMENTS_URL}/{id}', payload=expected_payment_request.to_json())
-        return ExpectedPaymentResponse(response)
+        return ExpectedPaymentResponse(response.json())
 
     # Payment Orders
     def create_payment_order(self, payment_order_request: PaymentOrderRequest) -> PaymentOrderResponse:
         response = self._post(url=PAYMENT_ORDER_URL, payload=payment_order_request.to_json(), idempotency_key=payment_order_request.idempotency_key)
-        return PaymentOrderResponse(response)
+        return PaymentOrderResponse(response.json())
 
     def get_payment_order(self, id):
-        _, result = self._get(url=f'{PAYMENT_ORDER_URL}/{id}')
+        result = self._get(url=f'{PAYMENT_ORDER_URL}/{id}').json()
         return PaymentOrderResponse(result)
 
     def list_payment_orders(self, metadata: dict=None) -> List[Optional[PaymentOrderResponse]]:
@@ -222,14 +222,14 @@ class ModernTreasury:
             for key, value in metadata.items():
                 querystring[f'metadata[{str(key)}]'] = str(value)
         try:
-            _, response = self._get(url=PAYMENT_ORDER_URL, params=querystring)
+            response = self._get(url=PAYMENT_ORDER_URL, params=querystring).json()
             return [PaymentOrderResponse(payment_order) for payment_order in response]
         except:
             return []
     
     def update_payment_order(self, id, payment_order_request: UpdatePaymentOrderRequest) -> PaymentOrderResponse:
         response = self._patch(url=f"{PAYMENT_ORDER_URL}/{id}", payload=payment_order_request.to_json())
-        return PaymentOrderResponse(response)
+        return PaymentOrderResponse(response.json())
 
     # Virtual Account
     def list_virtual_accounts(self, metadata: dict=None) -> List[Optional[VirtualAccountResponse]]:
@@ -238,7 +238,7 @@ class ModernTreasury:
             for key, value in metadata.items():
                 querystring[f'metadata[{str(key)}]'] = str(value)
         try:
-            _, response = self._get(url=VIRTUAL_ACCOUNT_URL, params=querystring)
+            response = self._get(url=VIRTUAL_ACCOUNT_URL, params=querystring).json()
             return [VirtualAccountResponse(virtual_account) for virtual_account in response]
         except:
             return []
@@ -247,7 +247,7 @@ class ModernTreasury:
         response = self._post(url=VIRTUAL_ACCOUNT_URL,
                               payload=virtual_account_request.to_json(),
                               idempotency_key=virtual_account_request.idempotency_key)
-        return VirtualAccountResponse(response)
+        return VirtualAccountResponse(response.json())
 
     def get_virtual_account_by_id(self, id:str):
         result = requests.get(url=f'{VIRTUAL_ACCOUNT_URL}/{id}', auth=self.http_basic_auth)
@@ -258,14 +258,14 @@ class ModernTreasury:
         response = self._post(url=INCOMING_PAYMENT_DETAIL_URL,
                               payload=incoming_payment_detail_request.to_json(),
                               idempotency_key=incoming_payment_detail_request.idempotency_key)
-        return IncomingPaymentDetailResponse(response)
+        return IncomingPaymentDetailResponse(response.json())
 
     def list_incoming_payment_detail(self, virtual_account_id: str = None) -> List[Optional[CounterPartyResponse]]:
         querystring = {}
         if virtual_account_id:
                 querystring[f'virtual_account_id'] = virtual_account_id
         try:
-            _, response = self._get(url=LIST_INCOMING_PAYMENT_DETAIL_URL, params=querystring)
+            response = self._get(url=LIST_INCOMING_PAYMENT_DETAIL_URL, params=querystring).json()
             return [IncomingPaymentDetailResponse(payment_order) for payment_order in response]
         except:
             return []
@@ -275,7 +275,7 @@ class ModernTreasury:
             "vendor_customer_id": vendor_customer_id,
             "entity": entity,
         }
-        _, response = self._get(LIST_CONNECTIONS_URL, params=querystring)
+        response = self._get(LIST_CONNECTIONS_URL, params=querystring).json()
         return [ConnectionResponse(connection) for connection in response]
 
     def create_internal_account(self, internal_account_request: InternalAccountRequest) -> InternalAccountResponse:
@@ -283,7 +283,7 @@ class ModernTreasury:
             url=INTERNAL_ACCOUNT_URL,
             payload=internal_account_request.to_json(),
             idempotency_key=internal_account_request.idempotency_key)
-        return InternalAccountResponse(response)
+        return InternalAccountResponse(response.json())
 
     def get_connection_by_vendor(self, vendor_name: Optional[str] = None, vendor_id: Optional[str] = None) -> Optional[ConnectionResponse]:
         connections = self.list_connections()

@@ -20,7 +20,8 @@ class ModernTreasuryTest(TestCase):
         res = self.api.list_connections()
         self.assertEqual(len(res), 2)
     
-    @patch_obj_with_json(ModernTreasury, "_post", "modern_treasury/tests/fixtures/internal_account_response.json")
+    @patch.object(Response, "ok", return_value=True)
+    @patch_obj_with_json(Response, "json", "modern_treasury/tests/fixtures/internal_account_response.json")
     def test__create_internal_account(self, *args):
         request = InternalAccountRequest(
             connection_id="123",
